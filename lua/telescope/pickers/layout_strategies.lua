@@ -194,6 +194,7 @@ local shared_options = {
   scroll_speed = "The number of lines to scroll through the previewer",
   prompt_position = { "Where to place prompt window.", "Available Values: 'bottom', 'top'" },
   anchor = { "Which edge/corner to pin the picker to", "See |resolver.resolve_anchor_pos()|" },
+  horizontal_compact = { "Whether Results close to Prompt" }
 }
 
 -- Used for generating vim help documentation.
@@ -341,7 +342,11 @@ layout_strategies.horizontal = make_documented_layout(
 
     local h_space
     -- Cap over/undersized height
-    height, h_space = calc_size_and_spacing(height, max_lines, bs, 2, 4, 1)
+    local b_num, s_num = 4, 1
+    if layout_config.horizontal_compact then
+      b_num, s_num = 3, 0
+    end
+    height, h_space = calc_size_and_spacing(height, max_lines, bs, 2, b_num, s_num)
 
     prompt.height = 1
     results.height = height - prompt.height - h_space
@@ -367,7 +372,11 @@ layout_strategies.horizontal = make_documented_layout(
     preview.line = math.floor((max_lines - height) / 2) + bs + 1
     if layout_config.prompt_position == "top" then
       prompt.line = preview.line
-      results.line = prompt.line + prompt.height + 1 + bs
+      local add_line = 1
+      if layout_config.horizontal_compact then
+        add_line = 0
+      end
+      results.line = prompt.line + prompt.height + add_line + bs
     elseif layout_config.prompt_position == "bottom" then
       results.line = preview.line
       prompt.line = results.line + results.height + 1 + bs
