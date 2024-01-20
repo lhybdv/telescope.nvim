@@ -164,6 +164,7 @@ mappings.default_mappings = config.values.default_mappings
       ["<C-/>"] = actions.which_key,
       ["<C-_>"] = actions.which_key, -- keys from pressing <C-/>
       ["<C-w>"] = { "<c-s-w>", type = "command" },
+      ["<C-r><C-w>"] = actions.insert_original_cword,
 
       -- disable c-j because we dont want to allow new lines #2123
       ["<C-j>"] = actions.nop,
@@ -195,9 +196,13 @@ mappings.default_mappings = config.values.default_mappings
 
       ["<C-u>"] = actions.preview_scrolling_up,
       ["<C-d>"] = actions.preview_scrolling_down,
+      ["<C-f>"] = actions.preview_scrolling_left,
+      ["<C-k>"] = actions.preview_scrolling_right,
 
       ["<PageUp>"] = actions.results_scrolling_up,
       ["<PageDown>"] = actions.results_scrolling_down,
+      ["<M-f>"] = actions.results_scrolling_left,
+      ["<M-k>"] = actions.results_scrolling_right,
 
       ["?"] = actions.which_key,
     },

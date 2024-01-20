@@ -194,7 +194,7 @@ files.grep_string = function(opts)
 
   if visual == true then
     local saved_reg = vim.fn.getreg "v"
-    vim.cmd [[noautocmd sil norm "vy]]
+    vim.cmd [[noautocmd sil norm! "vy]]
     local sele = vim.fn.getreg "v"
     vim.fn.setreg("v", saved_reg)
     word = vim.F.if_nil(opts.search, sele)
@@ -384,8 +384,9 @@ files.find_files = function(opts)
   pickers
     .new(opts, {
       prompt_title = "Find Files",
+      __locations_input = true,
       finder = finders.new_oneshot_job(find_command, opts),
-      previewer = conf.file_previewer(opts),
+      previewer = conf.grep_previewer(opts),
       sorter = conf.file_sorter(opts),
     })
     :find()
@@ -481,7 +482,7 @@ files.current_buffer_fuzzy_find = function(opts)
   end
 
   opts.results_ts_highlight = vim.F.if_nil(opts.results_ts_highlight, true)
-  local lang = vim.treesitter.language.get_lang(filetype)
+  local lang = vim.treesitter.language.get_lang(filetype) or filetype
   if opts.results_ts_highlight and lang and utils.has_ts_parser(lang) then
     local parser = vim.treesitter.get_parser(opts.bufnr, lang)
     local query = vim.treesitter.query.get(lang, "highlights")
