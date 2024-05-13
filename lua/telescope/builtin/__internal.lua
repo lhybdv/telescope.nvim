@@ -394,7 +394,7 @@ internal.commands = function(opts)
             cmd = cmd .. cr
           end
           vim.cmd [[stopinsert]]
-          vim.api.nvim_feedkeys(cmd, "t", false)
+          vim.api.nvim_feedkeys(cmd, "nt", false)
         end)
 
         return true
@@ -408,6 +408,7 @@ internal.quickfix = function(opts)
   local locations = vim.fn.getqflist({ [opts.id and "id" or "nr"] = qf_identifier, items = true }).items
 
   if vim.tbl_isempty(locations) then
+    utils.notify("builtin.quickfix", { msg = "No quickfix items", level = "INFO" })
     return
   end
 
@@ -504,6 +505,7 @@ internal.loclist = function(opts)
   end
 
   if vim.tbl_isempty(locations) then
+    utils.notify("builtin.loclist", { msg = "No loclist items", level = "INFO" })
     return
   end
 
@@ -551,7 +553,6 @@ internal.oldfiles = function(opts)
   if opts.cwd_only or opts.cwd then
     local cwd = opts.cwd_only and vim.loop.cwd() or opts.cwd
     cwd = cwd .. utils.get_separator()
-    cwd = cwd:gsub([[\]], [[\\]])
     results = vim.tbl_filter(function(file)
       return buf_in_cwd(file, cwd)
     end, results)
@@ -949,6 +950,9 @@ internal.buffers = function(opts)
       local idx = ((buffers[1] ~= nil and buffers[1].flag == "%") and 2 or 1)
       table.insert(buffers, idx, element)
     else
+      if opts.select_current and flag == "%" then
+        default_selection_idx = bufnr
+      end
       table.insert(buffers, element)
     end
   end
@@ -985,7 +989,7 @@ internal.colorscheme = function(opts)
   colors = vim.list_extend(
     colors,
     vim.tbl_filter(function(color)
-      return color ~= before_color
+      return not vim.tbl_contains(colors, color)
     end, vim.fn.getcompletion("", "color"))
   )
 
@@ -1114,7 +1118,7 @@ internal.marks = function(opts)
         line = line,
         lnum = lnum,
         col = col,
-        filename = vim.fs.normalize(v.file or bufname),
+        filename = utils.path_expand(v.file or bufname),
       }
       -- non alphanumeric marks goes to last
       if mark:match "%w" then
@@ -1311,6 +1315,19 @@ internal.autocommands = function(opts)
             return false
           end
           local val = selection.value
+          local cb = val.callback
+          if vim.is_callable(cb) then
+            if type(cb) ~= "string" then
+              local f = type(cb) == "function" and cb or rawget(getmetatable(cb), "__call")
+              local info = debug.getinfo(f, "S")
+              local file = info.source:match "^@(.+)"
+              local lnum = info.linedefined
+              if file and (lnum or 0) > 0 then
+                selection.filename, selection.lnum, selection.col = file, lnum, 1
+                return false
+              end
+            end
+          end
           local group_name = val.group_name ~= "<anonymous>" and val.group_name or ""
           local output =
             vim.fn.execute("verb autocmd " .. group_name .. " " .. val.event .. " " .. val.pattern, "silent")
